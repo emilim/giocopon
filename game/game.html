@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <script
+        src="https://cdn.jsdelivr.net/gh/aframevr/aframe@1c2407b26c61958baa93967b5412487cd94b290b/dist/aframe-master.min.js"></script>
+    <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar-nft.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <title>AR game</title>
+</head>
+
+<body>
+    <a-scene vr-mode-ui="enabled: false" embedded arjs="sourceType: webcam; videoTexture: true; debugUIEnabled: false;">
+        <a-box position="0 0 0" rotation="0 0 0" look-at="[gps-camera]" scale="120 120 120"></a-box>
+        <a-camera gps-camera rotation-reader></a-camera>
+    </a-scene>
+</body>
+<script>
+    const xhttp = new XMLHttpRequest();
+    xhttp.onload = function () {
+        const response = JSON.parse(this.responseText);
+        for (let i = 0; i < response.latitudine.length; i++) {
+            document.querySelector('a-box').setAttribute('gps-entity-place', `latitude: ${response.latitudine[i]}; longitude: ${response.longitudine[i]};`);
+        }
+    }
+    xhttp.open("GET", "/ARJS/newApp/maps/getMarkers.php");
+    xhttp.send();
+</script>
+
+</html>

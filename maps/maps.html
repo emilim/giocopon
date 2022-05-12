@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script src="http://www.openlayers.org/api/OpenLayers.js"></script>
+    <title>Maps</title>
+</head>
+
+<body onload="init();">
+    <div id="map" style="height: 500px; width: 100%;"></div>
+    <br><br>
+    <form>
+        <h1>Nuovo tesoro</h1>
+        <input type="text" name="location" placeholder="location" id="location"><br><br>
+        <button id="newTreasures">Nuovo Tesoro</button>
+    </form>
+
+</body>
+<script>
+    $(document).ready(function () {
+        $("#newTreasures").click(function () {
+            var geocode = 'https://nominatim.openstreetmap.org/search?&q=' + $("#location").val();
+
+            $.getJSON(geocode, function (data) {
+                var lat = data[0].lat;
+                var long = data[0].lon;
+                console.log(lat);
+                $.post("newTreasures.php",
+                    {
+                        latitudine: lat,
+                        longitudine: long,
+                    },
+
+                    function (data, status) {
+                        alert("Data: " + data + "\nStatus: " + status);
+                    });
+            });
+
+        });
+    });
+    const xhttp = new XMLHttpRequest();
+    xhttp.onload = function () {
+        const response = JSON.parse(this.responseText);
+        for (let i = 0; i < response.latitudine.length; i++) {
+            var LonLat = new OpenLayers.LonLat(response.longitudine[i], response.latitudine[i]).transform(fromProjection, toProjection);
+
+            LayerMarkers.addMarker(new OpenLayers.Marker(LonLat));
+        }
+    }
+    xhttp.open("GET", "getMarkers.php");
+    xhttp.send();
+
+    map = new OpenLayers.Map("map");
+    var mapnik = new OpenLayers.Layer.OSM();
+    var fromProjection = new OpenLayers.Projection("EPSG:4326");   // Transform from WGS 1984
+    var toProjection = new OpenLayers.Projection("EPSG:900913"); // to Spherical Mercator Projection
+    var position = new OpenLayers.LonLat(10.10690421122377, 44.694916091839886).transform(fromProjection, toProjection);
+    var LayerMarkers = new OpenLayers.Layer.Markers("Markers");
+    var zoom = 15;
+
+    function init() {
+        map.addLayers([mapnik, LayerMarkers]);
+        map.setCenter(position, zoom);
+
+        var click = new OpenLayers.Control.Click();
+        map.addControl(click);
+        click.activate();
+    }
+
+    OpenLayers.Control.Click = OpenLayers.Class(OpenLayers.Control, {
+        defaultHandlerOptions: {
+            'single': true,
+            'double': false,
+            'pixelTolerance': 0,
+            'stopSingle': false,
+            'stopDouble': false
+        },
+
+        initialize: function (options) {
+            this.handlerOptions = OpenLayers.Util.extend(
+                {}, this.defaultHandlerOptions
+            );
+            OpenLayers.Control.prototype.initialize.apply(
+                this, arguments
+            );
+            this.handler = new OpenLayers.Handler.Click(
+                this, {
+                'click': this.trigger
+            }, this.handlerOptions
+            );
+        },
+
+        trigger: function (e) {
+            var lonlat = map.getLonLatFromPixel(e.xy);
+            var lonlat1 = new OpenLayers.LonLat(lonlat.lon, lonlat.lat).transform(toProjection, fromProjection);
+            alert("Hello..." + lonlat1.lon + "  " + lonlat1.lat);
+            LayerMarkers.addMarker(new OpenLayers.Marker(lonlat));
+            $.post("newTreasures.php",
+                {
+                    latitudine: lonlat1.lat,
+                    longitudine: lonlat1.lon,
+                },
+
+                function (data, status) {
+                    alert("Data: " + data + "\nStatus: " + status);
+                });
+        }
+    });
+</script>
+<style>
+    form {
+        border-radius: 1rem;
+        background-color: #24caff;
+        border: 4px solid hsl(0, 0%, 90%);
+        margin: auto;
+        width: 50%;
+        padding: 10px;
+        text-align: center;
+    }
+
+    body {
+        background-color: #ef2d5e;
+        font: 100% / normal sans-serif;
+    }
+
+    h1 {
+        text-align: center;
+        color: #fff;
+    }
+
+    input {
+        border-radius: 1rem;
+        background-color: #b2b2b2;
+        color: #ffffff;
+        border: 4px solid hsl(0, 0%, 90%);
+        width: 50%;
+        margin: auto;
+        text-align: center;
+    }
+
+    button {
+        border-radius: 1rem;
+        background-color: #ffffff;
+        border: 4px solid hsl(0, 0%, 90%);
+        width: 50%;
+        margin: auto;
+        text-align: center;
+    }
+
+    #div1 {
+        text-align: center;
+        border-radius: 1rem;
+        border: 4px solid hsl(0, 0%, 90%);
+        height: 100%;
+        width: 100%;
+        margin: 0;
+    }
+</style>
+
+</html>
